@@ -1,7 +1,42 @@
 use std::{
     cmp::Reverse,
-    collections::{BTreeSet, BinaryHeap, HashMap},
+    collections::{BinaryHeap, HashMap},
 };
+/*
+The pair sum of a pair (a,b) is equal to a + b. The maximum pair sum is the largest pair sum in a list of pairs.
+
+    For example, if we have pairs (1,5), (2,3), and (4,4), the maximum pair sum would be max(1+5, 2+3, 4+4) = max(6, 5, 8) = 8.
+
+Given an array nums of even length n, pair up the elements of nums into n / 2 pairs such that:
+
+    Each element of nums is in exactly one pair, and
+    The maximum pair sum is minimized.
+
+Return the minimized maximum pair sum after optimally pairing up the elements.
+*/
+pub fn min_pair_sum(mut nums: Vec<i32>) -> i32 {
+    // sort the array
+    nums.sort_unstable();
+
+    let mut front = 0;
+    let mut back = nums.len() - 1;
+    let mut max = 0;
+    // The pairs are the largest and smallest, second largest and second smallest, etc
+    while front < back {
+        let pair = nums[front] + nums[back];
+
+        if pair > max {
+            max = pair;
+        }
+
+        // update indexes
+        front += 1;
+        back -= 1;
+    }
+
+    max
+}
+
 /*
 Given an array of strings nums containing n unique binary strings each of length n, return a binary string of length nthat does not appear in nums. If there are multiple answers, you may return any of them.
 */
