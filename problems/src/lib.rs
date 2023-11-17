@@ -3,6 +3,22 @@ use std::{
     collections::{BTreeSet, BinaryHeap, HashMap},
 };
 /*
+Given an array of strings nums containing n unique binary strings each of length n, return a binary string of length nthat does not appear in nums. If there are multiple answers, you may return any of them.
+*/
+pub fn find_different_binary_string(nums: Vec<String>) -> String {
+    nums.into_iter()
+        .enumerate()
+        .map(|(i, bin_string)| -> char {
+            match bin_string.as_bytes()[i] as char {
+                '0' => '1',
+                '1' => '0',
+                _ => panic!("invalid input, string does not consist of only 1s and 0s"),
+            }
+        })
+        .collect()
+}
+
+/*
 You are given an array of positive integers arr. Perform some operations (possibly none) on arr so that it satisfies these conditions:
 
     The value of the first element in arr must be 1.
@@ -74,97 +90,98 @@ impl Graph {
                 vec.push(Node {
                     node: edge[1],
                     cost: edge[2],
+                    cumulative_cost: None,
+                    visited: false,
                 });
             })
             .or_insert(vec![Node {
                 node: edge[1],
                 cost: edge[2],
+                cumulative_cost: None,
+                visited: false,
             }]);
     }
 
-    pub fn shortest_path(&self, node1: i32, node2: i32) -> i32 {
-        // Djikstra's algorithm, with the BTreeSet sorted by current costs,
-        // and the nodes as indexes to the nodes and visted vectors
-        //        let nodes: Vec<Node> = Vec::with_capacity(self.n.try_into().unwrap());
-        let mut visited: Vec<bool> = vec![false; self.n.try_into().unwrap()];
-        let mut costs: BTreeSet<Node> = BTreeSet::new();
+    pub fn shortest_path(&mut self, node1: i32, node2: i32) -> i32 {
+        // Djikstra's algorithm
 
-        // set the first node equal to cost of 0, and mark the first node as visited
-        let mut current_node = Some(Node {
-            cost: 0,
+        // initialize algorithm
+        let mut costs: Vec<Reverse<CostNode>> = Vec::new();
+        let mut visited: Vec<bool> = vec![false; self.n as usize];
+        costs.push(Reverse(CostNode {
+            cumulative_cost: 0,
             node: node1,
-        });
-        visited[TryInto::<usize>::try_into(node1).unwrap()] = true;
+        }));
 
-        while let Some(cur_node) = current_node.clone() {
-            // set current node to visited
-            println!("visiting {}", cur_node.node);
-            visited[TryInto::<usize>::try_into(cur_node.node).unwrap()] = true;
-            if cur_node.node == node2 {
-                return cur_node.cost;
+        // run the algorithm
+        while let Some(Reverse(node)) = costs.pop() {
+            // found endpoint
+            if node.node == node2 {
+                self.reset_djikstras();
+                return node.cumulative_cost;
+            }
+            // already visited this node
+            else if visited[node.node as usize] {
+                continue;
             }
 
-            // iterate through all nodes adjascent to cur_node updating costs as needed
-            let adjascent_vec = self.adjacency.get(&cur_node.node);
-            if adjascent_vec.is_some() {
-                for adjascent_node in adjascent_vec.unwrap() {
-                    // check if this node has already been visited
-                    if !visited[TryInto::<usize>::try_into(adjascent_node.node).unwrap()] {
-                        let mut this_cost = 0;
-                        let updated: Option<i32> = match costs.get(adjascent_node) {
-                            Some(node) => {
-                                this_cost = cur_node.cost + adjascent_node.cost;
-                                // found a cheaper path than previously found
-                                if this_cost < node.cost {
-                                    // update the value
-                                    Some(node.node)
-                                } else {
-                                    // stored path was cheaper, nothing to do
-                                    None
-                                }
-                            }
-                            // No stored cost found, insert the current cost
-                            None => {
-                                costs.insert(Node {
-                                    cost: cur_node.cost + adjascent_node.cost,
-                                    node: adjascent_node.node,
-                                });
-                                None
-                            }
-                        };
+            // mark current node as visited
+            visited[node.node as usize] = true;
 
-                        if let Some(node) = updated {
-                            println!(
-                                "better path to node {} discovered, cost {}",
-                                node, this_cost
-                            );
-                            costs.replace(Node {
-                                cost: this_cost,
-                                node,
-                            });
+            if let Some(vec) = self.adjacency.get_mut(&node.node) {
+                for adj_node in vec.iter_mut() {
+                    // already visited
+                    if visited[adj_node.node as usize] {
+                        continue;
+                    }
+
+                    // check if new path or cheaper path
+                    if let Some(cumulative_cost) = adj_node.cumulative_cost {
+                        // cheaper path found, update path, and add it to cost vector
+                        if node.cumulative_cost + adj_node.cost < cumulative_cost {
+                            adj_node.cumulative_cost = Some(node.cumulative_cost + adj_node.cost);
+                            costs.push(Reverse(CostNode::new(
+                                adj_node.node,
+                                adj_node.cumulative_cost.unwrap(),
+                            )));
                         }
+                    }
+                    // no existing path, create this one and add it to costs
+                    else {
+                        adj_node.cumulative_cost = Some(node.cumulative_cost + adj_node.cost);
+                        costs.push(Reverse(CostNode::new(
+                            adj_node.node,
+                            adj_node.cumulative_cost.unwrap(),
+                        )));
                     }
                 }
             }
 
-            let first;
-            {
-                first = costs.first().map(|opt| opt.clone());
-            }
-            current_node = match first {
-                Some(node) => costs.take(&node),
-                None => None,
-            }
+            costs.sort_unstable();
         }
 
+        self.reset_djikstras();
+        // did not find endpoint, no path available
         -1
+    }
+
+    fn reset_djikstras(&mut self) {
+        for (_key, val) in self.adjacency.iter_mut() {
+            for entry in val {
+                entry.cumulative_cost = None;
+                entry.visited = false;
+            }
+        }
     }
 }
 
+// equality, ordering, and hashing by node
 #[derive(Clone, Debug)]
 pub struct Node {
     pub cost: i32,
     pub node: i32,
+    pub cumulative_cost: Option<i32>,
+    pub visited: bool,
 }
 
 impl std::hash::Hash for Node {
@@ -190,6 +207,41 @@ impl PartialOrd for Node {
 impl Ord for Node {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         self.node.cmp(&other.node)
+    }
+}
+
+// equality and ordering by cost
+pub struct CostNode {
+    pub cumulative_cost: i32,
+    pub node: i32,
+}
+
+impl PartialEq for CostNode {
+    fn eq(&self, other: &Self) -> bool {
+        self.cumulative_cost.eq(&other.cumulative_cost)
+    }
+}
+
+impl PartialOrd for CostNode {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        self.cumulative_cost.partial_cmp(&other.cumulative_cost)
+    }
+}
+
+impl Ord for CostNode {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.cumulative_cost.cmp(&other.cumulative_cost)
+    }
+}
+
+impl Eq for CostNode {}
+
+impl CostNode {
+    pub fn new(node: i32, cumulative_cost: i32) -> Self {
+        CostNode {
+            cumulative_cost,
+            node,
+        }
     }
 }
 
