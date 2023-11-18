@@ -3,6 +3,58 @@ use std::{
     collections::{BinaryHeap, HashMap},
 };
 /*
+The frequency of an element is the number of times it occurs in an array.
+
+You are given an integer array nums and an integer k. In one operation, you can choose an index of nums and increment the element at that index by 1.
+
+Return the maximum possible frequency of an element after performing at most k operations.
+*/
+pub fn max_frequency(mut nums: Vec<i32>, k: i32) -> i32 {
+    nums.sort_unstable();
+
+    let mut max_freq = 1;
+    for i in (1..nums.len()).rev() {
+        let current_freq = max_frequency_index(&mut nums, k, i);
+
+        if current_freq > max_freq {
+            max_freq = current_freq;
+        }
+
+        if max_freq > i as i32 {
+            return max_freq;
+        }
+    }
+
+    max_freq
+}
+
+pub fn max_frequency_index(nums: &mut Vec<i32>, k: i32, i: usize) -> i32 {
+    // find the max frequency achievable from the current index
+    let mut j = i - 1;
+    let mut freq = 1;
+    let mut current_k = 0;
+
+    loop {
+        current_k += nums[i] - nums[j];
+
+        if current_k <= k {
+            // current_k within limits, increment freq
+            freq += 1;
+        } else {
+            // current_k exceeded limits, return freq
+            return freq;
+        }
+
+        if j == 0 {
+            // reached beginning of list, nothing more to do
+            return freq;
+        }
+
+        j -= 1;
+    }
+}
+
+/*
 The pair sum of a pair (a,b) is equal to a + b. The maximum pair sum is the largest pair sum in a list of pairs.
 
     For example, if we have pairs (1,5), (2,3), and (4,4), the maximum pair sum would be max(1+5, 2+3, 4+4) = max(6, 5, 8) = 8.
@@ -517,4 +569,39 @@ pub fn two_sum(nums: Vec<i32>, target: i32) -> Vec<i32> {
     }
 
     result
+}
+
+#[cfg(test)]
+mod test {
+    #[test]
+    fn max_frequency_case_1() {
+        let nums = vec![1, 2, 4];
+        let k = 5;
+
+        assert_eq!(3, super::max_frequency(nums, k));
+    }
+
+    #[test]
+    fn max_frequency_case_2() {
+        let nums = vec![1, 4, 8, 13];
+        let k = 5;
+
+        assert_eq!(2, super::max_frequency(nums, k));
+    }
+
+    #[test]
+    fn max_frequency_case_3() {
+        let nums = vec![3, 9, 6];
+        let k = 2;
+
+        assert_eq!(1, super::max_frequency(nums, k));
+    }
+
+    #[test]
+    fn max_frequency_case_4() {
+        let nums = vec![3, 9, 6];
+        let k = 2;
+
+        assert_eq!(1, super::max_frequency(nums, k));
+    }
 }
