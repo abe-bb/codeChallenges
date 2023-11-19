@@ -2,6 +2,29 @@ use std::{
     cmp::Reverse,
     collections::{BinaryHeap, HashMap},
 };
+
+//Leetcode 1887. Reduction Operations to Make the Array Elements Equal
+pub fn reduction_operations(mut nums: Vec<i32>) -> i32 {
+    // sort the array
+    nums.sort_unstable();
+
+    // iterate over the array and count the operations
+    let mut operations = 0;
+    let mut num_operations = 0;
+    let mut last_elem = nums[0];
+    for num in nums.into_iter().skip(1) {
+        if num == last_elem {
+            operations += num_operations;
+        } else {
+            num_operations += 1;
+            operations += num_operations;
+            last_elem = num;
+        }
+    }
+
+    operations
+}
+
 /*
 The frequency of an element is the number of times it occurs in an array.
 
@@ -574,7 +597,7 @@ pub fn two_sum(nums: Vec<i32>, target: i32) -> Vec<i32> {
 #[cfg(test)]
 mod test {
     #[test]
-    fn max_frequency_case_1() {
+    fn max_frequency_case1() {
         let nums = vec![1, 2, 4];
         let k = 5;
 
@@ -582,7 +605,7 @@ mod test {
     }
 
     #[test]
-    fn max_frequency_case_2() {
+    fn max_frequency_case2() {
         let nums = vec![1, 4, 8, 13];
         let k = 5;
 
@@ -590,7 +613,7 @@ mod test {
     }
 
     #[test]
-    fn max_frequency_case_3() {
+    fn max_frequency_case3() {
         let nums = vec![3, 9, 6];
         let k = 2;
 
@@ -598,10 +621,31 @@ mod test {
     }
 
     #[test]
-    fn max_frequency_case_4() {
+    fn max_frequency_case4() {
         let nums = vec![3, 9, 6];
         let k = 2;
 
         assert_eq!(1, super::max_frequency(nums, k));
+    }
+
+    #[test]
+    fn reduction_operations_case1() {
+        let nums = vec![5, 1, 3];
+
+        assert_eq!(3, super::reduction_operations(nums));
+    }
+
+    #[test]
+    fn reduction_operations_case2() {
+        let nums = vec![1, 1, 1];
+
+        assert_eq!(0, super::reduction_operations(nums));
+    }
+
+    #[test]
+    fn reduction_operations_case3() {
+        let nums = vec![1, 1, 2, 2, 3];
+
+        assert_eq!(4, super::reduction_operations(nums));
     }
 }
