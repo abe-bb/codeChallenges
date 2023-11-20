@@ -3,7 +3,68 @@ use std::{
     collections::{BinaryHeap, HashMap},
 };
 
-//Leetcode 1887. Reduction Operations to Make the Array Elements Equal
+// Leetcode 2391. Minimum Amount of Time to Collect Garbage
+pub fn garbage_collection(garbage: Vec<String>, travel: Vec<i32>) -> i32 {
+    // represents time for each truck
+    let mut m_truck = 0;
+    let mut p_truck = 0;
+    let mut g_truck = 0;
+
+    // represents potential travel time (conditional
+    // on finding garbage further along)
+    let mut tm = 0;
+    let mut tp = 0;
+    let mut tg = 0;
+
+    for (garb, travel) in garbage.into_iter().zip((0..1).chain(travel.into_iter())) {
+        tm += travel;
+        tp += travel;
+        tg += travel;
+
+        for char in garb.chars() {
+            match char {
+                'M' => {
+                    m_truck += 1;
+                    m_truck += tm;
+                    tm = 0;
+                }
+                'P' => {
+                    p_truck += 1;
+                    p_truck += tp;
+                    tp = 0;
+                }
+                'G' => {
+                    g_truck += 1;
+                    g_truck += tg;
+                    tg = 0;
+                }
+                _ => panic!("invalid input"),
+            }
+        }
+    }
+
+    m_truck + p_truck + g_truck
+}
+
+// Leetcode 26. Remove Duplicates from Sorted Array
+pub fn remove_duplicates(nums: &mut Vec<i32>) -> i32 {
+    let mut last_seen = -101;
+    let mut k = 0;
+
+    // use retain to efficiently filter out duplicates
+    nums.retain(|elem| {
+        if *elem == last_seen {
+            false
+        } else {
+            k += 1;
+            last_seen = *elem;
+            true
+        }
+    });
+    k
+}
+
+// Leetcode 1887. Reduction Operations to Make the Array Elements Equal
 pub fn reduction_operations(mut nums: Vec<i32>) -> i32 {
     // sort the array
     nums.sort_unstable();
@@ -647,5 +708,47 @@ mod test {
         let nums = vec![1, 1, 2, 2, 3];
 
         assert_eq!(4, super::reduction_operations(nums));
+    }
+
+    #[test]
+    fn remove_duplicates_case1() {
+        let mut nums = vec![1, 1, 2];
+
+        assert_eq!(2, super::remove_duplicates(&mut nums));
+        assert_eq!(1, nums[0]);
+        assert_eq!(2, nums[1]);
+    }
+
+    #[test]
+    fn remove_duplicates_case2() {
+        let mut nums = vec![0, 0, 1, 1, 1, 2, 2, 3, 3, 4];
+
+        assert_eq!(5, super::remove_duplicates(&mut nums));
+        assert_eq!(0, nums[0]);
+        assert_eq!(1, nums[1]);
+        assert_eq!(2, nums[2]);
+        assert_eq!(3, nums[3]);
+        assert_eq!(4, nums[4]);
+    }
+
+    #[test]
+    fn garbage_collection_case1() {
+        let garbage = vec![
+            "G".to_string(),
+            "P".to_string(),
+            "GP".to_string(),
+            "GG".to_string(),
+        ];
+        let travel = vec![2, 4, 3];
+
+        assert_eq!(21, super::garbage_collection(garbage, travel));
+    }
+
+    #[test]
+    fn garbage_collection_case2() {
+        let garbage = vec!["MMM".to_string(), "PGM".to_string(), "GP".to_string()];
+        let travel = vec![3, 10];
+
+        assert_eq!(37, super::garbage_collection(garbage, travel));
     }
 }
